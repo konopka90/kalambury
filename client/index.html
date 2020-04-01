@@ -1,0 +1,434 @@
+<!doctype html>
+<html lang="en">
+<head>
+<link href="https://fonts.googleapis.com/css2?family=Comic+Neue&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300&display=swap" rel="stylesheet">
+<link rel="stylesheet" type="text/css" href="client/style.css">
+<script src="/socket.io/socket.io.js"></script>
+</head>
+<body>
+<div class="container">
+	<div class="menu">
+		<div class="container-header left-container-header">
+			<input type="checkbox" id="wantToDrawCheckbox" /> Chcę rysować!
+		</div>
+		<div id="chat"></div>
+		<div class="container-header">
+			<input type="text" placeholder="Wyślij wiadomość" id="chatInputText" />
+		</div>
+
+		<div class="lobby-container">
+			<div class="lobby-header">
+				<div class="lobby-header-player">Gracz</div><div class="lobby-header-points">Punkty</div></div>
+			<div id="lobby">Pusto</div>
+		</div>
+		<div class="container-header">
+			<input type="text" id="nick" placeholder="Nick" /><button id="changeNick">Zmień nick</button>
+		</div>
+	</div>
+	
+	<div class="whiteboard-box-container">
+		<div class="container-header sentence-to-guess">JAKIES BARDZO DLUGIE PRZYSLOWIE KTORE MOZE SIE NIE ZMIESCIC</div>
+		<div id="whiteboard-box">
+			<canvas class="whiteboard" ></canvas>
+		</div>
+		<div class="container-header whiteboard-bottom-header">
+			<button id="resetWhiteboardButton" >Wyczyść tablicę</button> 
+			<div class="colors-container">
+				<div class="color black"></div>
+				<div class="color blue"></div>
+				<div class="color red"></div>
+				<div class="color green"></div>
+				<div class="color yellow"></div>
+				<div class="color white"></div>
+			</div>
+			<button id="giveUpButton" >Rezygnuj</button> 
+		</div>
+	</div>
+	
+	<div class="commands">
+		<div class="container-header">
+			Stan gry
+		</div>
+		<div>Rodzaj gry: 2m, 500 pkt</div>
+		<div id="gameState">Oczekiwanie na graczy</div>
+		<div class="container-header">
+			Komendy serwera
+		</div>
+		
+		<div class="commands-button-container">
+			<button id="startGame">Start</button>
+			<button id="stopGame">Stop</button>
+		</div>
+		<div></div>
+	</div>
+</div>
+<script>
+(function() {
+
+	const socket = io('http://192.168.1.11:8080');
+	var player = [];
+	var chatDivReference = document.getElementById("chat");
+	var chatInputTextReference = document.getElementById("chatInputText");
+	var gameStateDiv = document.getElementById('gameState');
+	var canvas = document.getElementsByClassName('whiteboard')[0];
+	var colors = document.getElementsByClassName('color');
+	var context = canvas.getContext('2d');
+	var current = {
+		color: 'black'
+	};
+	var drawing = false;
+  
+	document.getElementById("wantToDrawCheckbox").addEventListener('click', function() { onWantToDrawClick(); });
+	document.getElementById("chatInputText").addEventListener('keydown', function(event) { onChatInputEvent(event); });
+	document.getElementById("changeNick").addEventListener('click', function() { changeNick(); });
+	document.getElementById("resetWhiteboardButton").addEventListener('click', function() { resetWhiteboardRequest(); });
+	document.getElementById("giveUpButton").addEventListener('click', function() { giveUp(); });
+	document.getElementById("startGame").addEventListener('click', function() { startGame(); });
+	document.getElementById("stopGame").addEventListener('click', function() { stopGame(); });
+
+	registerOnConnectEvent();
+	registerOnDisconnectEvent();
+	registerOnGetId();
+	registerOnPlayerDetails();
+	login();
+
+	registerNickChangedEvents();
+	registerLobbyUpdateEvents();
+	registerChatUpdateEvents();
+	registerWantToDrawEvents();
+	registerColorsClickEvents();
+	registerCanvasEvents();
+	registerOnGetWhiteboard();
+	registerOnResetWhiteboard();
+	registerOnDrawingEvent();
+	registerOnUpdateGameState();
+	
+	getWhiteboard();
+	getGameState();
+	insertMessageToChat("Witamy w kalamburach !!!");
+	scrollChatToBottom();
+	
+	//window.addEventListener('resize', onResize, false);
+	onResize();
+  
+	function registerOnConnectEvent() {
+		socket.on('connect', () => {
+			console.log("Server connected!");
+			// login();
+		});
+	}
+    
+	function registerOnDisconnectEvent() {
+		socket.on('disconnect', (reason) => {
+			console.log("Server disconnected. Reason: " + reason);
+			if (reason === 'io server disconnect') {
+				// the disconnection was initiated by the server, you need to reconnect manually
+				socket.connect();
+			}
+			// else the socket will automatically try to reconnect
+		});
+	}
+  
+  
+  function registerOnGetId() {
+	socket.on('newPlayerId', (data) => {
+		localStorage.setItem('id', data.id);
+		getPlayerDetails();
+	});
+  }
+  
+  function registerOnPlayerDetails() {
+  	socket.on('playerDetails', (data) => {
+		player = data;
+		refreshNickInInputBox();
+	});
+  }
+  
+  function login() {
+    // If no ID - register new user
+	if (localStorage.getItem('id') === null) {
+		socket.emit('registerNewPlayer');
+	} else {
+		// If ID exists - just login
+		getPlayerDetails();
+	}
+  }
+  
+  function getPlayerDetails() {
+	socket.emit('getPlayerDetails', { id: localStorage.getItem('id') });
+  }
+  
+  function scrollChatToBottom() {
+	var element = document.getElementById("chat");
+	element.scrollTop = element.scrollHeight;
+  }
+    
+  /** Colors **/
+    
+  function registerColorsClickEvents() {
+	  for (var i = 0; i < colors.length; i++){
+		colors[i].addEventListener('click', onColorUpdate, false);
+	  }
+  }
+  
+  function onColorUpdate(e){
+	current.color = e.target.className.split(' ')[1];
+	console.log("Current color is " + current.color);
+  }
+  
+  /** Nickname **/
+  
+  function registerNickChangedEvents() {
+	socket.on('updatedNick', function(data) { 
+		player.nick = data.nick 
+		refreshNickInInputBox();
+	});
+  }
+  
+  function refreshNickInInputBox() {
+  	let inputTypeTextName = document.getElementById('nick');
+	if (player !== null && player.nick !== null) {
+		inputTypeTextName.value = player.nick;
+	}
+  }
+  
+  function changeNick() {
+	let newNick = document.getElementById('nick').value.trim();
+	
+	if (newNick == player.nick) {
+		return;
+	}
+	
+	if (newNick.length > 20) {
+		newNick = newNick.substring(0,20);
+	}
+	
+	if (newNick !== '') {
+		let oldNick = player.nick;
+		socket.emit('updateNick', { id: player.id, nick: newNick, oldNick: oldNick });
+	} else {
+		refreshNickInInputBox();
+	}
+  }
+  
+  /** Lobby **/
+  
+  function registerLobbyUpdateEvents() {
+	socket.on('updateLobby', function(data) { 		
+		// Delete rows
+		let lobby = document.getElementById('lobby');
+		lobby.innerHTML = "";
+		
+		// Add rows
+		for (let i = 0; i < data.length; i++) {
+			lobby.innerHTML += "<hr/><div class='lobby-entry'><div class='lobby-nick'>" + data[i].nick + "</div><div class='lobby-points'>" + data[i].points + "</div></div>";
+		}
+	});
+  }
+
+  /** Chat **/
+  
+  function registerChatUpdateEvents() {
+  	socket.on('updateChatWithSystemMessage', function(data) {
+		insertMessageToChat(data.message);
+	});
+	
+	socket.on('updateChatWithMessageFromPlayer', function(data) { 
+		insertNickAndMessageToChat(data.nick, data.message);
+	});
+  }
+  
+  function registerWantToDrawEvents() {
+  	socket.on('positionInQueue', function(data) { 
+		insertMessageToChat("Jesteś " + data.positionInQueue + " w kolejce do rysowania");
+	});
+  }
+  
+  function onChatInputEvent(event) {
+	if (event.keyCode === 13) {
+		let message = chatInputTextReference.value;
+		if (message !== '') {
+			socket.emit('chatMessage', { id: player.id, message: message });
+			chatInputTextReference.value = "";
+		}
+	}
+  }
+  
+  function onWantToDrawClick() {
+	var checkbox = document.getElementById("wantToDrawCheckbox");
+	if (checkbox.checked == true) {
+		socket.emit('wantToDraw', { id: player.id, wantToDraw: true });
+	} else {
+		socket.emit('wantToDraw', { id: player.id, wantToDraw: false });
+	}
+  }
+
+  function insertMessageToChat(message) {
+	chatDivReference.innerHTML = chatDivReference.innerHTML + "<i>### " + message + " ###</i></br>";
+	scrollChatToBottom();
+  }
+  
+  function insertNickAndMessageToChat(nick, message) {
+	chatDivReference.innerHTML = chatDivReference.innerHTML + "<b>" + nick + "</b>: " + message + "</br>";
+	scrollChatToBottom();
+  }
+  
+  /** Canvas **/
+  
+  function registerOnDrawingEvent() {
+	socket.on('drawing', onDrawingEvent);
+  }
+  
+  function registerOnGetWhiteboard() {
+	socket.on('whiteboard', function(data) {
+		var w = canvas.width;
+		var h = canvas.height;
+		
+		for (var i in data) {
+			let line = data[i];
+			drawLine(line.x0 * w, line.y0 * h, line.x1 * w, line.y1 * h, line.color);
+		}
+	});
+  }
+  
+  function registerOnResetWhiteboard() {
+	socket.on('resetWhiteboard', function() {
+		context.clearRect(0, 0, canvas.width, canvas.height);
+	});
+  }
+  
+  function resetWhiteboardRequest() {
+	socket.emit('resetWhiteboardRequest');
+  }
+  
+  function getWhiteboard() {
+	socket.emit('getWhiteboard');
+  }
+  
+  function giveUp() {
+	socket.emit('giveUp', { id: player.id });
+  }
+  
+  function onDrawingEvent(data){
+    var w = canvas.width;
+    var h = canvas.height;
+    drawLine(data.x0 * w, data.y0 * h, data.x1 * w, data.y1 * h, data.color);
+  }
+  
+  function registerCanvasEvents() {
+	canvas.addEventListener('mousedown', onMouseDown, false);
+	canvas.addEventListener('mouseup', onMouseUp, false);
+	canvas.addEventListener('mouseout', onMouseUp, false);
+	canvas.addEventListener('mousemove', throttle(onMouseMove, 10), false);
+
+	//Touch support for mobile devices
+	canvas.addEventListener('touchstart', onMouseDown, false);
+	canvas.addEventListener('touchend', onMouseUp, false);
+	canvas.addEventListener('touchcancel', onMouseUp, false);
+	canvas.addEventListener('touchmove', throttle(onMouseMove, 10), false);
+  }
+  
+  function onMouseDown(e){
+    drawing = true;
+    current.x = getX(e);
+    current.y = getY(e);
+	// console.log("onMouseDown: " + current.x + " " + current.y);
+  }
+
+  function onMouseUp(e){
+    if (!drawing) { return; }
+    drawing = false;
+    drawLine(current.x, current.y, getX(e), getY(e), current.color, true);
+	// console.log("onMouseUp: " + current.x + " " + current.y);
+  }
+
+  function onMouseMove(e){
+    if (!drawing) { return; }
+    drawLine(current.x, current.y, getX(e), getY(e), current.color, true);
+    current.x = getX(e);
+    current.y = getY(e);
+	// console.log("onMouseMove: " + current.x + " " + current.y);
+  }
+  
+  // limit the number of events per second
+  function throttle(callback, delay) {
+    var previousCall = new Date().getTime();
+    return function() {
+      var time = new Date().getTime();
+
+      if ((time - previousCall) >= delay) {
+        previousCall = time;
+        callback.apply(null, arguments);
+      }
+    };
+  }
+  
+  function drawLine(x0, y0, x1, y1, color, emit){
+    context.beginPath();
+    context.moveTo(x0, y0);
+    context.lineTo(x1, y1);
+    context.strokeStyle = color;
+	
+	if (color === 'white') {
+		context.lineWidth = 10;
+	} else {
+		context.lineWidth = 2;
+	}
+    context.stroke();
+    context.closePath();
+
+    if (!emit) { return; }
+    var w = canvas.width;
+    var h = canvas.height;
+
+    socket.emit('drawing', {
+      x0: x0 / w,
+      y0: y0 / h,
+      x1: x1 / w,
+      y1: y1 / h,
+      color: color
+    });
+  }
+  
+  function onResize() {
+	var rect = canvas.parentNode.getBoundingClientRect();
+	canvas.width = rect.width;
+	canvas.height = rect.height;
+  }
+  
+  function getX(e) {
+	return (e.clientX||e.touches[0].clientX) - canvas.offsetLeft;
+  }
+  
+  function getY(e) {
+	return (e.clientY||e.touches[0].clientY) - canvas.offsetTop;
+  }
+  
+  /** Server commands **/
+  function startGame() {
+	socket.emit('startGame');
+  }
+  
+  function stopGame() {
+	socket.emit('stopGame');
+  }
+  
+  /** Game state **/
+  function registerOnUpdateGameState() {
+	socket.on('updateGameState', function(data) {
+		gameStateDiv.innerHTML = data.state;
+		if (data.state === 'WAITING_FOR_PLAYERS') gameStateDiv.innerHTML = 'Oczekiwanie na graczy';
+		if (data.state === 'GAME_IN_PROGRESS') gameStateDiv.innerHTML = 'Gra jest w trakcie';
+		if (data.state === 'NOBODY_WANTS_TO_DRAW') gameStateDiv.innerHTML = 'Nikt nie chce rysować!';
+	});
+  }
+  
+  function getGameState() {
+	socket.emit('getGameState');
+  }
+  
+})();
+</script>
+</body>
+</html>
