@@ -10,7 +10,7 @@
 <div class="container">
 	<div class="menu">
 		<div class="container-header left-container-header">
-			<input type="checkbox" id="wantToDrawCheckbox" /> Chcę rysować!
+			<div id="wantToDrawCheckboxDiv"><input type="checkbox" id="wantToDrawCheckbox" /> Chcę rysować!</div>
 		</div>
 		<div id="chat"></div>
 		<div class="container-header">
@@ -68,6 +68,8 @@
 
 	const socket = io('http://192.168.1.11:8080');
 	var player = [];
+	var wantToDrawCheckbox = document.getElementById("wantToDrawCheckbox");;
+	var wantToDrawCheckboxDiv = document.getElementById("wantToDrawCheckboxDiv");
 	var chatDivReference = document.getElementById("chat");
 	var chatInputTextReference = document.getElementById("chatInputText");
 	var gameStateDiv = document.getElementById('gameState');
@@ -86,6 +88,8 @@
 	document.getElementById("giveUpButton").addEventListener('click', function() { giveUp(); });
 	document.getElementById("startGame").addEventListener('click', function() { startGame(); });
 	document.getElementById("stopGame").addEventListener('click', function() { stopGame(); });
+
+	toggleMenuForWaitingForPlayersState();
 
 	registerOnConnectEvent();
 	registerOnDisconnectEvent();
@@ -405,6 +409,28 @@
 	return (e.clientY||e.touches[0].clientY) - canvas.offsetTop;
   }
   
+  /** Show/hide elements **/
+  
+  function toggleMenuForWaitingForPlayersState() {
+	toggleCheckbox(false);
+	console.log("toggling off");	
+  }
+  
+  function toggleMenuForGameInProgressState() {
+	toggleCheckbox(true);
+	console.log("toggling on");	
+  }
+  
+  function toggleCheckbox(show) {
+	if (!show)
+		wantToDrawCheckbox.checked = false;
+  
+	if (show)
+		wantToDrawCheckboxDiv.style.display = "block";
+	else
+		wantToDrawCheckboxDiv.style.display = "none";
+  }
+  
   /** Server commands **/
   function startGame() {
 	socket.emit('startGame');
@@ -418,9 +444,20 @@
   function registerOnUpdateGameState() {
 	socket.on('updateGameState', function(data) {
 		gameStateDiv.innerHTML = data.state;
-		if (data.state === 'WAITING_FOR_PLAYERS') gameStateDiv.innerHTML = 'Oczekiwanie na graczy';
-		if (data.state === 'GAME_IN_PROGRESS') gameStateDiv.innerHTML = 'Gra jest w trakcie';
-		if (data.state === 'NOBODY_WANTS_TO_DRAW') gameStateDiv.innerHTML = 'Nikt nie chce rysować!';
+		if (data.state === 'WAITING_FOR_PLAYERS') { 
+			gameStateDiv.innerHTML = 'Oczekiwanie na graczy';
+			toggleMenuForWaitingForPlayersState();
+		}
+		
+		if (data.state === 'GAME_IN_PROGRESS') { 
+			gameStateDiv.innerHTML = 'Gra jest w trakcie';
+			toggleMenuForGameInProgressState();
+		}
+		
+		if (data.state === 'NOBODY_WANTS_TO_DRAW') { 
+			gameStateDiv.innerHTML = 'Nikt nie chce rysować!';
+			toggleMenuForGameInProgressState(); // <- the same as above !
+		}
 	});
   }
   

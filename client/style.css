@@ -36,6 +36,10 @@ html, body {
 	align-items: center;
 }
 
+#wantToDrawCheckboxDiv {
+	display: none;
+}
+
 #chat {
 	padding: 8px;
 	line-height: 26px;

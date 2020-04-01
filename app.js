@@ -27,7 +27,7 @@ var Player = function(id, socket_id, nick) {
 		id: id,
 		socket_id: socket_id,
 		nick: nick,
-		points: 0
+		points: 0,
 	}
 	
 	return self;
@@ -101,6 +101,7 @@ io.sockets.on('connection', function(socket) {
 		} else {
 			player.socket_id = socket.id;
 			socket.player_id = player.id;
+			SOCKET_LIST[socket.id] = socket;
 			PLAYER_LIST[data.id] = player;
 			console.log("Sending player details to player = " + player.nick);
 			socket.emit('playerDetails', player);
@@ -215,12 +216,17 @@ io.sockets.on('connection', function(socket) {
 			PLAYER_LIST[i].points = 0;
 		}
 		
+		/** Clear queue **/
+		DRAWING_QUEUE = [];
+		
 		GAME_STATE.state = 'GAME_IN_PROGRESS';
 		
 		/** Send message to players **/
 		for (var i in SOCKET_LIST) {
 			sendSystemMessage(SOCKET_LIST[i], "Gra rozpoczęta");
 		}
+		
+		sendUpdatedGameState();
 	}
 	
 	function stopGame() {
@@ -257,7 +263,6 @@ io.sockets.on('connection', function(socket) {
 		player.points = player.points + 1;
 		
 		if (player.points >= POINTS_TO_WIN) {
-			
 			stopGame();
 			
 			/** Winner ! **/
