@@ -126,8 +126,11 @@ html, body {
   right: 0;
 }
 
-.whiteboard-bottom-header {
+#whiteboard-bottom-header {
 	justify-content: space-between;
+	display: flex;
+	width: 100%;
+	align-items: center;
 }
 
 .sentence-to-guess {

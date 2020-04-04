@@ -28,21 +28,23 @@
 	</div>
 	
 	<div class="whiteboard-box-container">
-		<div class="container-header sentence-to-guess">JAKIES BARDZO DLUGIE PRZYSLOWIE KTORE MOZE SIE NIE ZMIESCIC</div>
+		<div class="container-header sentence-to-guess" id="question"></div>
 		<div id="whiteboard-box">
 			<canvas class="whiteboard" ></canvas>
 		</div>
-		<div class="container-header whiteboard-bottom-header">
-			<button id="resetWhiteboardButton" >Wyczyść tablicę</button> 
-			<div class="colors-container">
-				<div class="color black"></div>
-				<div class="color blue"></div>
-				<div class="color red"></div>
-				<div class="color green"></div>
-				<div class="color yellow"></div>
-				<div class="color white"></div>
+		<div class="container-header">
+			<div id="whiteboard-bottom-header">
+				<button id="resetWhiteboardButton" >Wyczyść tablicę</button> 
+				<div class="colors-container">
+					<div class="color black"></div>
+					<div class="color blue"></div>
+					<div class="color red"></div>
+					<div class="color green"></div>
+					<div class="color yellow"></div>
+					<div class="color white"></div>
+				</div>
+				<button id="giveUpButton" >Rezygnuj</button> 
 			</div>
-			<button id="giveUpButton" >Rezygnuj</button> 
 		</div>
 	</div>
 	
@@ -52,13 +54,14 @@
 		</div>
 		<div>Rodzaj gry: 2m, 500 pkt</div>
 		<div id="gameState">Oczekiwanie na graczy</div>
+		<div>Sekund do końca: <span id="timer">0</span></div>
 		<div class="container-header">
 			Komendy serwera
 		</div>
 		
 		<div class="commands-button-container">
-			<button id="startGame">Start</button>
-			<button id="stopGame">Stop</button>
+			<button id="startServer">Start</button>
+			<button id="stopServer">Stop</button>
 		</div>
 		<div></div>
 	</div>
@@ -66,13 +69,16 @@
 <script>
 (function() {
 
-	const socket = io('http://192.168.1.11:8080');
+	// const socket = io('http://192.168.1.11:8080');
+	const socket = io();
 	var player = [];
 	var wantToDrawCheckbox = document.getElementById("wantToDrawCheckbox");;
 	var wantToDrawCheckboxDiv = document.getElementById("wantToDrawCheckboxDiv");
 	var chatDivReference = document.getElementById("chat");
 	var chatInputTextReference = document.getElementById("chatInputText");
 	var gameStateDiv = document.getElementById('gameState');
+	var questionDiv = document.getElementById('question');
+	var timerDiv = document.getElementById('timer');
 	var canvas = document.getElementsByClassName('whiteboard')[0];
 	var colors = document.getElementsByClassName('color');
 	var context = canvas.getContext('2d');
@@ -86,8 +92,8 @@
 	document.getElementById("changeNick").addEventListener('click', function() { changeNick(); });
 	document.getElementById("resetWhiteboardButton").addEventListener('click', function() { resetWhiteboardRequest(); });
 	document.getElementById("giveUpButton").addEventListener('click', function() { giveUp(); });
-	document.getElementById("startGame").addEventListener('click', function() { startGame(); });
-	document.getElementById("stopGame").addEventListener('click', function() { stopGame(); });
+	document.getElementById("startServer").addEventListener('click', function() { startServer(); });
+	document.getElementById("stopServer").addEventListener('click', function() { stopServer(); });
 
 	toggleMenuForWaitingForPlayersState();
 
@@ -107,6 +113,7 @@
 	registerOnResetWhiteboard();
 	registerOnDrawingEvent();
 	registerOnUpdateGameState();
+	registerOnTimerUpdate();
 	
 	getWhiteboard();
 	getGameState();
@@ -119,7 +126,7 @@
 	function registerOnConnectEvent() {
 		socket.on('connect', () => {
 			console.log("Server connected!");
-			// login();
+			login();
 		});
 	}
     
@@ -146,6 +153,9 @@
   	socket.on('playerDetails', (data) => {
 		player = data;
 		refreshNickInInputBox();
+		refreshWantToDrawCheckbox();
+		updateQuestionLabel();
+		enableColors(player.isDrawing);
 	});
   }
   
@@ -179,6 +189,14 @@
   function onColorUpdate(e){
 	current.color = e.target.className.split(' ')[1];
 	console.log("Current color is " + current.color);
+  }
+  
+  function enableColors(enabled) {
+	if (enabled) {
+		document.getElementById("whiteboard-bottom-header").style.display = 'flex';
+	} else {
+		document.getElementById("whiteboard-bottom-header").style.display = 'none';
+	}
   }
   
   /** Nickname **/
@@ -278,6 +296,21 @@
 	scrollChatToBottom();
   }
   
+  function refreshWantToDrawCheckbox() {
+	var checkbox = document.getElementById("wantToDrawCheckbox");
+	if (player != null) {
+		checkbox.checked = player.wantToDraw;
+	}
+  }
+  
+  /** Question label **/
+  
+  function updateQuestionLabel() {
+	if (player != null) {
+		questionDiv.innerHTML = player.question;
+	}
+  }
+  
   /** Canvas **/
   
   function registerOnDrawingEvent() {
@@ -295,7 +328,7 @@
 		}
 	});
   }
-  
+    
   function registerOnResetWhiteboard() {
 	socket.on('resetWhiteboard', function() {
 		context.clearRect(0, 0, canvas.width, canvas.height);
@@ -334,21 +367,21 @@
   }
   
   function onMouseDown(e){
-    drawing = true;
+    drawing = true && player.isDrawing;
     current.x = getX(e);
     current.y = getY(e);
 	// console.log("onMouseDown: " + current.x + " " + current.y);
   }
 
   function onMouseUp(e){
-    if (!drawing) { return; }
+    if (!drawing || !player.isDrawing) { return; }
     drawing = false;
     drawLine(current.x, current.y, getX(e), getY(e), current.color, true);
 	// console.log("onMouseUp: " + current.x + " " + current.y);
   }
 
   function onMouseMove(e){
-    if (!drawing) { return; }
+    if (!drawing || !player.isDrawing) { return; }
     drawLine(current.x, current.y, getX(e), getY(e), current.color, true);
     current.x = getX(e);
     current.y = getY(e);
@@ -431,13 +464,21 @@
 		wantToDrawCheckboxDiv.style.display = "none";
   }
   
-  /** Server commands **/
-  function startGame() {
-	socket.emit('startGame');
+  /** Timer **/
+  
+  function registerOnTimerUpdate() {
+	socket.on('updateTimer', function(data) {
+		timerDiv.innerHTML = data.seconds;
+	});
   }
   
-  function stopGame() {
-	socket.emit('stopGame');
+  /** Server commands **/
+  function startServer() {
+	socket.emit('startServer');
+  }
+  
+  function stopServer() {
+	socket.emit('stopServer');
   }
   
   /** Game state **/
@@ -449,13 +490,13 @@
 			toggleMenuForWaitingForPlayersState();
 		}
 		
-		if (data.state === 'GAME_IN_PROGRESS') { 
+		if (data.state === 'DRAWING') { 
 			gameStateDiv.innerHTML = 'Gra jest w trakcie';
 			toggleMenuForGameInProgressState();
 		}
 		
 		if (data.state === 'NOBODY_WANTS_TO_DRAW') { 
-			gameStateDiv.innerHTML = 'Nikt nie chce rysować!';
+			gameStateDiv.innerHTML = '<span style="color:red">Nikt nie chce rysować!</span>';
 			toggleMenuForGameInProgressState(); // <- the same as above !
 		}
 	});
