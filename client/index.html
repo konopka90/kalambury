@@ -446,12 +446,10 @@
   
   function toggleMenuForWaitingForPlayersState() {
 	toggleCheckbox(false);
-	console.log("toggling off");	
   }
   
   function toggleMenuForGameInProgressState() {
 	toggleCheckbox(true);
-	console.log("toggling on");	
   }
   
   function toggleCheckbox(show) {
@@ -490,7 +488,7 @@
 			toggleMenuForWaitingForPlayersState();
 		}
 		
-		if (data.state === 'DRAWING') { 
+		if (data.state === 'DRAWING' || data.state === 'LOOK_FOR_DRAWING_PLAYER') { 
 			gameStateDiv.innerHTML = 'Gra jest w trakcie';
 			toggleMenuForGameInProgressState();
 		}

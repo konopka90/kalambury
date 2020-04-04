@@ -65,12 +65,14 @@ var DRAWING_QUEUE = [];
 var PLAYER_LIST = {};
 var WHITE_BOARD = [];
 var GAME_STATE = GameState();
-var POINTS_TO_WIN = 6;
+var POINTS_TO_WIN = 500;
 var QUESTION_WORDS_PREFIXES = [];
 var MAX_SECONDS = 30;
 var TIMER = null;
 var TIME_LEFT = 0;
 var PLAYER_TIMEOUT = 15 * 1000;
+var MAX_POINTS_TO_GET = 45.0;
+var WINNER_FACTOR = 0.75;
 
 /** Event bus **/
 
@@ -157,7 +159,7 @@ EVENT_BUS.sockets.on('connection', function(EVENT_SOCKET) {
 		GAME_STATE.state = 'DRAWING';
 		GAME_STATE.drawingPlayerId = data.playerId;
 		GAME_STATE.question = data.question;
-		console.log("Now is drawing " + PLAYER_LIST[data.playerId].nick);
+		console.log("Now is drawing player " + PLAYER_LIST[data.playerId].nick);
 		sendSystemMessageToAll("Teraz rysuje " + PLAYER_LIST[data.playerId].nick)
 		clearWhiteboard();
 		sendUpdatedGameStateToAll();
@@ -193,8 +195,22 @@ EVENT_BUS.sockets.on('connection', function(EVENT_SOCKET) {
 		var drawingPlayer = PLAYER_LIST[GAME_STATE.drawingPlayerId];
 		GAME_STATE.drawingPlayerId = null;
 		
-		drawingPlayer.points = drawingPlayer.points + 2;
-		playerWhoGuessed.points = playerWhoGuessed.points + 3;
+		let drawingPlayerScore = Math.ceil(1.0 * TIME_LEFT/MAX_SECONDS * MAX_POINTS_TO_GET);
+		let playerWhoGuessedScore = Math.ceil(1.0 * TIME_LEFT/MAX_SECONDS * MAX_POINTS_TO_GET * WINNER_FACTOR);
+		
+		if (drawingPlayerScore < 1.0) {
+			drawingPlayerScore = 1;
+		}
+		
+		if (playerWhoGuessedScore < 1.0) {
+			playerWhoGuessedScore = 1;
+		}
+		
+		drawingPlayer.points = drawingPlayer.points + drawingPlayerScore;
+		playerWhoGuessed.points = playerWhoGuessed.points + playerWhoGuessedScore;
+		
+		console.log("Drawing player " + drawingPlayer.nick + " scores " + drawingPlayerScore);
+		console.log("Guessing player " + playerWhoGuessed.nick + " scores " + playerWhoGuessedScore);
 		
 		sendSystemMessageToAll("Hasło zgadł " + playerWhoGuessed.nick);
 		EVENT_BUS_CLIENT.emit('CHECK_BIG_WIN');
@@ -467,8 +483,7 @@ function isItCloseAnswer(message) {
 				continue;
 			}
 			
-			console.log("word in question " + wordInQuestion);
-			if (wordInQuestion.length > 3 && wordToCheck.length >= 3 && wordInQuestion.startsWith(wordToCheck)) {
+			if (wordInQuestion.length > 3 && wordToCheck.length >= 3 && wordInQuestion.startsWith(wordToCheck.substring(0,3))) {
 				CLOSE_WORDS.push(wordToCheck);
 				continue;
 			}
@@ -490,6 +505,9 @@ function startTimer() {
 	
 	TIME_LEFT = MAX_SECONDS;
 	TIMER = setInterval(function(){
+		
+		TIME_LEFT -= 1;
+				
 		// Send update to all players
 		for (var i in SOCKET_LIST) {
 			var socket = SOCKET_LIST[i];
@@ -503,8 +521,6 @@ function startTimer() {
 			}
 			return;
 		}
-		TIME_LEFT -= 1;
-		
 
 	}, 1000);
 }
