@@ -75,7 +75,7 @@ var WHITE_BOARD = [];
 var GAME_STATE = GameState();
 var POINTS_TO_WIN = 500;
 var QUESTION_WORDS_PREFIXES = [];
-var MAX_SECONDS = 30;
+var MAX_SECONDS = 120;
 var TIMER = null;
 var TIME_LEFT = 0;
 var PLAYER_TIMEOUT = 15 * 1000;
@@ -406,6 +406,10 @@ io.sockets.on('connection', function(socket) {
 	});
 	
 	socket.on('giveUp', function(data) {
+		if (GAME_STATE.state != 'DRAWING') {
+			return;
+		}
+		
 		for (var i in SOCKET_LIST) {
 			var player = PLAYER_LIST[data.id];
 			sendSystemMessage(SOCKET_LIST[i], "Gracz " + PLAYER_LIST[data.id].nick + " zrezygnował z rysowania"); 

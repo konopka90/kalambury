@@ -402,6 +402,10 @@
   }
   
   function drawLine(x0, y0, x1, y1, color, emit){
+	if (x0 == x1 && y0 == y1) {
+		x1 = x1 + 1.0;
+		y1 = y1 + 1.0;
+	}
     context.beginPath();
     context.moveTo(x0, y0);
     context.lineTo(x1, y1);
