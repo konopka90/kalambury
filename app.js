@@ -9,6 +9,14 @@ Array.prototype.remove = function() {
     return this;
 };
 
+function shuffle(a) {
+    for (let i = a.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+}
+
 /** Server **/
 
 var express = require('express');
@@ -19,17 +27,17 @@ app.get('/', function(req, res) {
 	res.sendFile(__dirname + '/client/index.html');
 });
 
+app.get('/reload', function(req, res) {
+	readQuestions();
+	res.status(200).send("Loaded " + QUESTIONS.length + " questions");
+});
+
+
 app.use('/client', express.static(__dirname + '/client'));
 
 const PORT = process.env.PORT || 8080;
 serv.listen(PORT);
 console.log("Server started.");
-
-/** Read questions **/
-
-var QUESTIONS = require('fs').readFileSync('./questions.txt', 'utf-8')
-	.split('\n')
-	.filter(Boolean);
 
 
 /** Game variables **/
@@ -73,6 +81,8 @@ var TIME_LEFT = 0;
 var PLAYER_TIMEOUT = 15 * 1000;
 var MAX_POINTS_TO_GET = 45.0;
 var WINNER_FACTOR = 0.75;
+var QUESTIONS = []; 
+var QUESTION_INDEX = 0;
 
 /** Event bus **/
 
@@ -84,6 +94,7 @@ var EVENT_BUS_CLIENT = require("socket.io-client").connect("http://localhost:700
 EVENT_BUS.sockets.on('connection', function(EVENT_SOCKET) {
 	
 	console.log('Event bus connected');
+	readQuestions();
 	
 	EVENT_SOCKET.on('SERVER_STARTED', function() {
 		/** Clear players points **/
@@ -140,12 +151,10 @@ EVENT_BUS.sockets.on('connection', function(EVENT_SOCKET) {
 	});
 	
 	EVENT_SOCKET.on('FIND_QUESTION', function(data) { 
-		let min = 0;
-		let max = QUESTIONS.length - 1;
-		let random = Math.floor(Math.random()*(max-min+1)+min);
-		let new_question = QUESTIONS[random].trim().toLowerCase();		
+		let new_question = QUESTIONS[QUESTION_INDEX];		
 		let question_words = new_question.split(' ');
 		
+		QUESTION_INDEX = (QUESTION_INDEX + 1) % QUESTIONS.length;
 		QUESTION_WORDS_PREFIXES = [];
 		for (var i in question_words) {
 			let word = question_words[i];
@@ -178,7 +187,7 @@ EVENT_BUS.sockets.on('connection', function(EVENT_SOCKET) {
 			return;
 		}
 	
-		let message = data.message.toLowerCase().trim();
+		let message = data.message.toLowerCase().trim().replace(',','').replace('.','');
 		if (message === GAME_STATE.question && GAME_STATE.state == 'DRAWING') {
 			GAME_STATE.state = 'GOOD_ANSWER';
 			EVENT_BUS_CLIENT.emit('SMALL_WIN', { id: data.id });
@@ -558,6 +567,30 @@ function sendPlayerDetailsToAll() {
 		}
 	}
 	
+}
+
+function readQuestions() {
+	QUESTIONS = []
+	let lines = [];
+	lines = require('fs').readFileSync('./questions.txt', 'utf-8')
+	.split('\n')
+	.filter(Boolean);
+	
+	for (var i in lines) {
+		if (typeof lines[i] === 'function') {
+			continue;
+		}
+		
+		if (!(lines[i].startsWith("//") || lines[i].startsWith("/*"))) {
+			QUESTIONS.push(lines[i].trim().toLowerCase());
+		}
+	}
+	
+	QUESTIONS = shuffle(QUESTIONS);
+	
+	console.log("Shuffled");
+	console.log(QUESTIONS);
+	console.log("Loaded " + QUESTIONS.length + " questions");
 }
 
 // Update lobby list

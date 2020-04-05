@@ -1,3 +1,4 @@
+/** Powiedzenia **/
 baba z wozu koniom lżej
 bez pracy nie ma kołaczy
 biednemu zawsze wiatr w oczy
@@ -13,6 +14,7 @@ fortuna kołem się toczy
 nie chwal dnia przed zachodem słońca
 lepszy wróbel w garści niż gołąb na dachu
 dzieci i ryby głosu nie mają
+siała baba mak nie wiedziała jak
 MARSKOŚĆ WĄTROBY
 CIEMNA STRONA MOCY
 WOLNA AMERYKANKA
@@ -22,22 +24,174 @@ MIEĆ NIERÓWNO POD SUFITEM
 STRZELAĆ ŚLEPAKAMI
 DZIURA ZABITA DECHAMI
 ŻYWICIEL RODZINY
+końskie zdrowie
 patrzeć przez pryzmat
-ładowarka
+CHŁOPAKI NIE PŁACZĄ
 nie mieć zielonego pojęcia
-prezent
 BECZKA ŚMIECHU
-LAS IGLASTY
-CZYSTE RĘCE
 ZIEMIA OBIECANA
 KOCHAM CIĘ POLSKO
-mała czarna
+UBAW PO PACHY
 BUŁKA Z MASŁEM
-OCZYSZCZALNIA SCIEKÓW
-MIEĆ COŚ NA KOŃCU JĘZYKA
-PTAKI LATAJĄ W KLUCZU
-PTAKI LATAJĄ KLUCZEM
 PODNOSIĆ NA DUCHU
-MAPA
+ŚMIAĆ SIĘ JAK GŁUPI DO SERA
+ROSNĄĆ JAK NA DROŻDŻACH
+BIEDNY JAK MYSZ KOŚCIELNA
 GRAĆ KOMUŚ NA NERWACH
+cały dom na głowie
+ręka rękę myje
+MIEĆ COŚ NA KOŃCU JĘZYKA
+tańczyła igła z nitką
+miód dla moich uszu
+dzielić włos na czworo
+serce na dłoni
+być w siódmym niebie
+PODPISYWAĆ SIĘ OBIEMA RĘKAMI
+nie dla psa kiełbasa
+co ma piernik do wiatraka
+
+/** Losowe slowa **/
+prezent
+LAS IGLASTY
+CZYSTE RĘCE
+mała czarna
+OCZYSZCZALNIA SCIEKÓW
+PTAKI LATAJĄ W KLUCZU
+MAPA
+plan miasta
+gra w butelkę
 ułamek sekundy
+wisielec
+głowa rodziny
+ciąża
+kominek
+studnia
+młot pneumatyczny
+szlaban
+komputer przenośny
+pradziadek
+masakra
+rzeź
+afera
+balon
+ładowarka
+kasa pancerna
+manna z nieba
+gwiazdka z nieba
+zaćmienie słońca
+chodzić po górach
+herbata z prądem
+nóż w wodzie
+ślepa uliczka
+człowiek wielkiego serca
+ciężki kawałek chleba
+iść do diabła
+kłamać jak z nut
+tornister
+książka kucharska
+klaser
+skrytka pocztowa
+
+
+/** Zwierzęta **/
+pingwin
+wiewiórka
+małpa
+król lew
+król zwierząt
+ZBŁĄKANA OWIECZKA
+słoń
+bocian
+żyrafa
+pająk
+wielbłąd
+kangur
+krowa
+
+/** Piłka nożna **/
+boisko
+bramkarz
+piła
+piłka
+sędzia
+rzut karny
+trybuny
+
+
+/** Owoce i warzywa **/
+ananas
+banan
+ogórek
+fasola
+
+/** Rozrywka **/
+szachy
+szach mat
+szachownica
+grać na komputerze
+będę grał w grę
+tomb raider
+mario
+grać w pokera
+grać w karty
+
+
+/** Samochody **/
+czerwone ferrari
+cięzarówka
+czołg
+tir
+furgonetka
+koło zapasowe
+mustang
+pickup
+
+
+/** Filmy **/
+cztery wesela i pogrzeb
+forrest gump
+władca pierścieni
+człowiek z blizną
+gwiezdne wojny
+seksmisja
+labirynt
+helikopter w ogniu
+shrek
+sherlock holmes
+dziewczyna z tatuażem
+czarny łabędź
+batman
+superman
+terminator
+miłość szmaragd i krokodyl
+mały książę
+wejście smoka
+kolekcjoner kości
+igrzyska śmierci
+titanic
+
+
+/** Postacie fikcyjne **/
+czerwony kapturek
+
+/** Zawody **/
+GINEKOLOG
+murarz
+kobieta lekkich obyczajów
+
+/** Wydarzenia **/
+bitwa pod grunwaldem
+święta bożego narodzenia
+chrzest polski
+
+/** Miejsca **/
+klub go go
+
+/** Pogoda **/
+ulewa
+nawałnica
+burza piaskowa
+piorunochron
+piorun
+noc polarna
+wschód słońca
