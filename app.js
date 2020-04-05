@@ -1,3 +1,5 @@
+
+
 Array.prototype.remove = function() {
     var what, a = arguments, L = a.length, ax;
     while (L && this.length) {
@@ -19,6 +21,7 @@ function shuffle(a) {
 
 /** Server **/
 
+
 var express = require('express');
 var app = express();
 var serv = require('http').Server(app);
@@ -38,6 +41,7 @@ app.use('/client', express.static(__dirname + '/client'));
 const PORT = process.env.PORT || 8080;
 serv.listen(PORT);
 console.log("Server started.");
+
 
 
 /** Game variables **/
